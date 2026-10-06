@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Lab Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <style>
+      :root {
+        --bg: #fafaf9;
+        --surface: #ffffff;
+        --text: #1c1917;
+        --muted: #78716c;
+        --border: #e7e5e4;
+        --accent: #4f46e5;
+        --new: #16a34a;
+        --changed: #2563eb;
+        --retired: #a8a29e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0c0a09;
+          --surface: #1c1917;
+          --text: #f5f5f4;
+          --muted: #a8a29e;
+          --border: #292524;
+          --accent: #818cf8;
+          --new: #4ade80;
+          --changed: #60a5fa;
+          --retired: #78716c;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      header {
+        padding: 20px 16px 0;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 12px 24px;
+      }
+      header h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      header .sub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      nav {
+        margin-left: auto;
+        display: flex;
+        gap: 4px;
+      }
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+      }
+      nav a.active {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .card h2 {
+        font-size: 15px;
+        margin: 0 0 12px;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .tile {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 16px;
+      }
+      .tile .v {
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .tile .k {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .filters select,
+      .filters input {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font: inherit;
+        font-size: 14px;
+      }
+      .filters input {
+        flex: 1;
+        min-width: 160px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 800px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart {
+        overflow-x: auto;
+      }
+      .chart svg {
+        max-width: none;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 12px;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+      }
+      tr.row {
+        cursor: pointer;
+      }
+      tr.row:hover {
+        background: var(--bg);
+      }
+      tr.hist td {
+        background: var(--bg);
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tbl-wrap {
+        overflow-x: auto;
+      }
+      .pill {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .pill.new {
+        color: var(--new);
+        border-color: var(--new);
+      }
+      .pill.changed {
+        color: var(--changed);
+        border-color: var(--changed);
+      }
+      .pill.retired {
+        color: var(--retired);
+        border-color: var(--retired);
+      }
+      a {
+        color: var(--accent);
+      }
+      .issues {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .issues li {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .issues .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      article {
+        max-width: 760px;
+      }
+      article h1 {
+        font-size: 26px;
+      }
+      .card article h2 { font-size: 20px; margin-bottom: 8px; }
+      article h2 {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 4px;
+        margin-top: 32px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AI Lab Tracker</h1>
+      <span class="sub" id="updated"></span>
+      <nav>
+        <a href="#/" id="nav-dash">Dashboard</a>
+        <a href="#/issues" id="nav-issues">Newsletters</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="view-dash">
+        <div class="tiles" id="tiles"></div>
+        <div class="filters">
+          <select id="f-group">
+            <option value="">All groups</option>
+          </select>
+          <select id="f-lab">
+            <option value="">All labs</option>
+          </select>
+          <select id="f-cat">
+            <option value="">All categories</option>
+          </select>
+          <select id="f-type">
+            <option value="">All change types</option>
+            <option>new</option>
+            <option>changed</option>
+            <option>retired</option>
+          </select>
+          <input id="f-q" type="search" placeholder="Search features…" />
+        </div>
+        <div class="card">
+          <h2>Timeline</h2>
+          <div class="legend">
+            <span><i style="background: var(--new)"></i>new</span
+            ><span><i style="background: var(--changed)"></i>changed</span
+            ><span><i style="background: var(--retired)"></i>retired</span>
+          </div>
+          <div class="chart" id="timeline"></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h2>Events per month</h2>
+            <div class="chart" id="monthly"></div>
+          </div>
+          <div class="card">
+            <h2>Events by lab</h2>
+            <div class="chart" id="bylab"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Current features <span class="muted" id="count"></span></h2>
+          <div class="tbl-wrap">
+            <table id="tbl">
+              <thead>
+                <tr>
+                  <th data-k="lab">Lab</th>
+                  <th data-k="feature">Feature</th>
+                  <th data-k="category">Category</th>
+                  <th data-k="status">Status</th>
+                  <th data-k="valid_from">Last change</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted" style="font-size: 13px">
+            Click a row to see its full history.
+          </p>
+        </div>
+        <div class="card">
+      <h2>Labs</h2>
+      <div class="tbl-wrap"><table id="labs-tbl"><thead><tr><th>Lab</th><th>Group</th><th>Features</th><th>Tracked since</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+      <p class="muted" style="font-size:13px">The monthly routine adds labs as they ship their first product.</p>
+    </div>
+  </section>
+
+  <section id="view-issues" class="hidden">
+        <div class="card">
+          <h2>Monthly issues</h2>
+          <ul class="issues" id="issue-list"></ul>
+        </div>
+      </section>
+
+      <section id="view-issue" class="hidden">
+        <p><a href="#/issues">← All issues</a></p>
+        <div class="card"><article id="issue-body"></article></div>
+      </section>
+    </main>
+
+    <script>
+      const css = (n) =>
+        getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+      const typeColor = () => ({
+        new: css("--new"),
+        changed: css("--changed"),
+        retired: css("--retired"),
+      });
+      let rows = [],
+        issues = [],
+        labs = [],
+        sortKey = "valid_from",
+        sortDir = -1;
+
+      Promise.all([
+        d3.csv("data/features.csv"),
+        d3.csv("data/labs.csv"),
+        fetch("newsletters/index.json")
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
+      ]).then(([data, labRows, iss]) => {
+        labs = labRows;
+        rows = data.map((d) => ({
+          ...d,
+          date: new Date(d.valid_from + "T00:00:00"),
+          is_current: d.is_current === "true",
+        }));
+        issues = iss.sort((a, b) => b.month.localeCompare(a.month));
+        const latest = d3.max(rows, (d) => d.date);
+        document.getElementById("updated").textContent = latest
+          ? `Latest event ${d3.utcFormat("%b %-d, %Y")(latest)}`
+          : "";
+        fillSelect("f-group", [...new Set(rows.map((d) => d.group))].sort());
+        fillSelect("f-lab", [...new Set(rows.map((d) => d.lab))].sort());
+        fillSelect("f-cat", [...new Set(rows.map((d) => d.category))].sort());
+        ["f-group", "f-lab", "f-cat", "f-type", "f-q"].forEach((id) =>
+          document.getElementById(id).addEventListener("input", render),
+        );
+        document.querySelectorAll("th[data-k]").forEach((th) =>
+          th.addEventListener("click", () => {
+            sortDir = sortKey === th.dataset.k ? -sortDir : 1;
+            sortKey = th.dataset.k;
+            renderTable(filtered());
+          }),
+        );
+        renderIssueList();
+        route();
+      });
+
+      function fillSelect(id, vals) {
+        const s = document.getElementById(id);
+        vals.forEach((v) => s.add(new Option(v, v)));
+      }
+
+      function filtered() {
+        const g = (v) => document.getElementById(v).value;
+        const q = g("f-q").toLowerCase();
+        return rows.filter(
+          (d) =>
+            (!g("f-group") || d.group === g("f-group")) &&
+            (!g("f-lab") || d.lab === g("f-lab")) &&
+            (!g("f-cat") || d.category === g("f-cat")) &&
+            (!g("f-type") || d.change_type === g("f-type")) &&
+            (!q || (d.feature + " " + d.description).toLowerCase().includes(q)),
+        );
+      }
+
+      function render() {
+        const data = filtered();
+        renderTiles(data);
+        const w = Math.max(
+          document.getElementById("timeline").clientWidth,
+          640,
+        );
+        const colors = typeColor();
+        const domain = ["new", "changed", "retired"];
+        const range = domain.map((k) => colors[k]);
+        const gOrder = ["frontier", "media", "fast-follower", "emerging"];
+        const labs = [...new Set(data.map((d) => d.lab))].sort((a, b) => {
+          const ga = gOrder.indexOf(data.find((d) => d.lab === a).group), gb = gOrder.indexOf(data.find((d) => d.lab === b).group);
+          return ga - gb || a.localeCompare(b);
+        });
+
+        document.getElementById("timeline").replaceChildren(
+          Plot.plot({
+            width: w,
+            height: Math.max(120, labs.length * 28 + 50),
+            marginLeft: 130,
+            x: { type: "utc", label: null, grid: true },
+            y: { domain: labs, label: null },
+            color: { domain, range },
+            marks: [
+              Plot.dot(data, {
+                x: "date",
+                y: "lab",
+                fill: "change_type",
+                r: 5,
+                fillOpacity: 0.8,
+                title: (d) =>
+                  `${d.feature} (${d.change_type})\n${d.valid_from}\n${d.description}`,
+                tip: true,
+              }),
+            ],
+          }),
+        );
+
+        const half = Math.max(
+          document.getElementById("monthly").clientWidth,
+          320,
+        );
+        document.getElementById("monthly").replaceChildren(
+          Plot.plot({
+            width: half,
+            height: 260,
+            x: { type: "band", label: null, tickFormat: (d) => d.slice(5) },
+            y: { grid: true, label: "events" },
+            color: { domain, range },
+            marks: [
+              Plot.barY(
+                data,
+                Plot.groupX(
+                  { y: "count" },
+                  {
+                    x: (d) => d.valid_from.slice(0, 7),
+                    fill: "change_type",
+                    tip: true,
+                  },
+                ),
+              ),
+              Plot.ruleY([0]),
+            ],
+          }),
+        );
+
+        document.getElementById("bylab").replaceChildren(
+          Plot.plot({
+            width: half,
+            height: Math.max(160, labs.length * 22 + 40),
+            marginLeft: 130,
+            x: { grid: true, label: "events" },
+            y: { label: null },
+            color: { domain, range },
+            marks: [
+              Plot.barX(
+                data,
+                Plot.groupY(
+                  { x: "count" },
+                  {
+                    y: "lab",
+                    fill: "change_type",
+                    sort: { y: "-x" },
+                    tip: true,
+                  },
+                ),
+              ),
+              Plot.ruleX([0]),
+            ],
+          }),
+        );
+
+        renderTable(data);
+      }
+
+      function renderLabs() {
+        const n = d3.rollup(rows.filter((d) => d.is_current), (v) => v.length, (d) => d.lab);
+        const sorted = [...labs].sort((a, b) => d3.descending(a.added_on, b.added_on) || d3.ascending(a.group, b.group) || d3.ascending(a.lab, b.lab));
+        document.querySelector("#labs-tbl tbody").innerHTML = sorted
+          .map((l) => `<tr><td><strong>${esc(l.lab)}</strong></td><td>${esc(l.group)}</td><td>${n.get(l.lab) || 0}</td><td>${esc(l.added_on)}</td><td>${l.active === "true" ? "active" : '<span class="muted">inactive</span>'}</td></tr>`)
+          .join("");
+      }
+
+      function renderTiles(data) {
+        const month = d3.max(rows, (d) => d.valid_from.slice(0, 7)) || "";
+        const inMonth = data.filter((d) => d.valid_from.startsWith(month));
+        const c = (t) => inMonth.filter((d) => d.change_type === t).length;
+        const tiles = [
+          [
+            "Tracked features",
+            new Set(
+              data
+                .filter((d) => d.is_current && d.status !== "retired")
+                .map((d) => d.id),
+            ).size,
+          ],
+          [
+            "Labs tracked",
+            labs.filter((l) => l.active === "true").length +
+              (labs.some((l) => l.added_on.startsWith(month))
+                ? `<small class="muted" style="font-size:13px"> +${labs.filter((l) => l.added_on.startsWith(month)).length} new</small>`
+                : ""),
+          ],
+          [`Events in ${month}`, inMonth.length],
+          ["New", c("new")],
+          ["Changed", c("changed")],
+          ["Retired", c("retired")],
+        ];
+        renderLabs();
+        document.getElementById("tiles").innerHTML = tiles
+          .map(
+            ([k, v]) =>
+              `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`,
+          )
+          .join("");
+      }
+
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      }
+
+      function renderTable(data) {
+        const ids = new Set(data.map((d) => d.id));
+        const current = rows
+          .filter((d) => d.is_current && ids.has(d.id))
+          .sort((a, b) => sortDir * d3.ascending(a[sortKey], b[sortKey]));
+        document.getElementById("count").textContent = `(${current.length})`;
+        const tb = document.querySelector("#tbl tbody");
+        tb.innerHTML = current
+          .map(
+            (d) => `<tr class="row" data-id="${esc(d.id)}">
+    <td>${esc(d.lab)}</td><td><strong>${esc(d.feature)}</strong></td><td>${esc(d.category)}</td>
+    <td><span class="pill ${d.change_type}">${esc(d.status)}</span></td><td>${esc(d.valid_from)}</td>
+    <td>${esc(d.description)} ${d.source_url ? `<a href="${esc(d.source_url)}" target="_blank" rel="noopener">source</a>` : ""}</td></tr>`,
+          )
+          .join("");
+        tb.querySelectorAll("tr.row").forEach((tr) =>
+          tr.addEventListener("click", () => toggleHistory(tr)),
+        );
+      }
+
+      function toggleHistory(tr) {
+        const next = tr.nextElementSibling;
+        if (next && next.classList.contains("hist")) {
+          while (tr.nextElementSibling?.classList.contains("hist"))
+            tr.nextElementSibling.remove();
+          return;
+        }
+        const hist = rows
+          .filter((d) => d.id === tr.dataset.id)
+          .sort((a, b) => d3.descending(a.valid_from, b.valid_from));
+        tr.insertAdjacentHTML(
+          "afterend",
+          hist
+            .map(
+              (
+                d,
+              ) => `<tr class="hist"><td></td><td colspan="2"><span class="pill ${d.change_type}">${d.change_type}</span></td>
+    <td>${esc(d.status)}</td><td>${esc(d.valid_from)} → ${esc(d.valid_to || "now")}</td><td>${esc(d.description)}</td></tr>`,
+            )
+            .join(""),
+        );
+      }
+
+      function renderIssueList() {
+        document.getElementById("issue-list").innerHTML = issues.length
+          ? issues
+              .map(
+                (i) =>
+                  `<li><a href="#/issue/${esc(i.month)}">${esc(i.title)}</a><div class="muted">${esc(i.summary || "")}</div></li>`,
+              )
+              .join("")
+          : '<li class="muted">No issues yet.</li>';
+      }
+
+      async function route() {
+        const h = location.hash || "#/";
+        const show = (id) =>
+          ["view-dash", "view-issues", "view-issue"].forEach((v) =>
+            document.getElementById(v).classList.toggle("hidden", v !== id),
+          );
+        document
+          .getElementById("nav-dash")
+          .classList.toggle("active", h === "#/");
+        document
+          .getElementById("nav-issues")
+          .classList.toggle("active", h !== "#/");
+        const m = h.match(/^#\/issue\/(\d{4}-\d{2})$/);
+        if (m) {
+          show("view-issue");
+          const r = await fetch(`newsletters/${m[1]}.md`);
+          document.getElementById("issue-body").innerHTML = r.ok
+            ? marked.parse(await r.text())
+            : "<p>Issue not found.</p>";
+        } else if (h === "#/issues") show("view-issues");
+        else {
+          show("view-dash");
+          render();
+        }
+      }
+      window.addEventListener("hashchange", route);
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", () =>
+          location.hash === "" || location.hash === "#/" ? render() : null,
+        );
+    </script>
+  </body>
+</html>

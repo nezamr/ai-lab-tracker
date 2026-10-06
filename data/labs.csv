@@ -1,0 +1,28 @@
+lab,group,sources,added_on,active
+OpenAI,frontier,https://openai.com/news/;https://help.openai.com/en/articles/6825453-chatgpt-release-notes;https://platform.openai.com/docs/changelog,2026-01-01,true
+Anthropic,frontier,https://www.anthropic.com/news;https://docs.anthropic.com/en/release-notes/overview;https://support.anthropic.com/en/articles/12138966-release-notes,2026-01-01,true
+Google DeepMind,frontier,https://blog.google/technology/google-deepmind/;https://deepmind.google/discover/blog/;https://ai.google.dev/gemini-api/docs/changelog,2026-01-01,true
+Meta,frontier,https://ai.meta.com/blog/;https://about.fb.com/news/,2026-01-01,true
+xAI,frontier,https://x.ai/news;https://docs.x.ai/docs/release-notes,2026-01-01,true
+Mistral,frontier,https://mistral.ai/news;https://docs.mistral.ai/getting-started/changelog/,2026-01-01,true
+Midjourney,media,https://updates.midjourney.com/,2026-01-01,true
+Black Forest Labs,media,https://bfl.ai/announcements,2026-01-01,true
+Runway,media,https://runwayml.com/news;https://runwayml.com/changelog,2026-01-01,true
+Stability AI,media,https://stability.ai/news,2026-01-01,true
+Luma,media,https://lumalabs.ai/blog,2026-01-01,true
+Pika,media,https://pika.art/,2026-01-01,true
+DeepSeek,fast-follower,https://api-docs.deepseek.com/news/;https://github.com/deepseek-ai,2026-01-01,true
+Qwen (Alibaba),fast-follower,https://qwenlm.github.io/blog/;https://github.com/QwenLM,2026-01-01,true
+Moonshot (Kimi),fast-follower,https://moonshotai.github.io/;https://github.com/MoonshotAI,2026-01-01,true
+Zhipu (Z.ai),fast-follower,https://z.ai/blog;https://github.com/zai-org,2026-01-01,true
+MiniMax,fast-follower,https://www.minimax.io/news;https://github.com/MiniMax-AI,2026-01-01,true
+Thinking Machines Lab,emerging,https://thinkingmachines.ai/news/;https://thinkingmachines.ai/blog/,2026-10-06,true
+Microsoft AI,fast-follower,https://microsoft.ai/news/;https://github.blog/changelog/,2026-10-06,true
+NVIDIA,fast-follower,https://blogs.nvidia.com/;https://developer.nvidia.com/blog/tag/nemotron/,2026-10-06,true
+Cohere,fast-follower,https://cohere.com/blog;https://docs.cohere.com/changelog,2026-10-06,true
+ByteDance Seed,fast-follower,https://seed.bytedance.com/en/blog,2026-10-06,true
+Kling (Kuaishou),media,https://ir.kuaishou.com/news-events/company-news;https://kling.ai/release-note/release-notes,2026-10-06,true
+Tencent Hunyuan,fast-follower,https://www.tencent.com/en-us/articles/2202386.html;https://github.com/Tencent-Hunyuan;https://huggingface.co/tencent,2026-10-06,true
+Xiaomi MiMo,fast-follower,https://mimo.xiaomi.com/;https://huggingface.co/XiaomiMiMo,2026-10-06,true
+ElevenLabs,media,https://elevenlabs.io/blog;https://elevenlabs.io/docs/changelog,2026-10-06,true
+StepFun,fast-follower,https://static.stepfun.com/blog/step-3.5-flash/;https://huggingface.co/stepfun-ai,2026-10-06,true
